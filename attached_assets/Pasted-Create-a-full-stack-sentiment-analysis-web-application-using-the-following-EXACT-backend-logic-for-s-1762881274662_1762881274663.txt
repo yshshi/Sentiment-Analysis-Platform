@@ -1,0 +1,199 @@
+Create a full-stack sentiment-analysis web application using the following EXACT backend logic for sentiment classification (do not change it):
+
+def clean_text(text):
+    text = str(text).lower()
+    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r'\d', '', text)
+    words = text.split()
+    words = [w for w in words if w not in stop_words]
+    words = [lemmatizer.lemmatize(w) for w in words]
+    return " ".join(words)
+
+def get_sentiment(text):
+    score = sia.polarity_scores(text)
+    if score["compound"] > 0.05:
+        return "Positive"
+    elif score["compound"] < -0.05:
+        return "Negative"
+    else:
+        return "Neutral"
+
+@app.route("/analyze", methods=["POST"])
+def analyze_feedback():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    file = request.files['file']
+    filename = file.filename
+    
+    try:
+        if filename.endswith('.csv'):
+            df = pd.read_csv(file)
+        elif filename.endswith('.xlsx'):
+            df = pd.read_excel(file)
+        else:
+            return jsonify({"error": "Invalid file format. Please upload CSV or Excel files only."}), 400
+    except Exception as e:
+        return jsonify({"error": f"Error reading file: {str(e)}"}), 400
+
+    if "reviewText" not in df.columns:
+        return jsonify({"error": "Missing 'reviewText' column in the uploaded file"}), 400
+    
+    if df.empty or df["reviewText"].dropna().empty:
+        return jsonify({"error": "The uploaded file contains no valid data to analyze"}), 400
+
+    df["cleaned_text"] = df["reviewText"].apply(clean_text)
+    df["sentiment"] = df["cleaned_text"].apply(get_sentiment)
+
+    sentiment_counts = df["sentiment"].value_counts().to_dict()
+    total = sum(sentiment_counts.values())
+    
+    if total == 0:
+        return jsonify({"error": "No valid text data found for sentiment analysis"}), 400
+
+    sentiment_percentages = {
+        "Positive": round((sentiment_counts.get("Positive", 0) / total) * 100, 2),
+        "Negative": round((sentiment_counts.get("Negative", 0) / total) * 100, 2),
+        "Neutral": round((sentiment_counts.get("Neutral", 0) / total) * 100, 2)
+    }
+    
+    grouped_reviews = {
+        "Positive": df[df["sentiment"] == "Positive"]["reviewText"].tolist(),
+        "Negative": df[df["sentiment"] == "Negative"]["reviewText"].tolist(),
+        "Neutral": df[df["sentiment"] == "Neutral"]["reviewText"].tolist()
+    }
+
+    return jsonify({
+        "success": True,
+        "sentiment_counts": sentiment_counts,
+        "sentiment_percentages": sentiment_percentages,
+        "grouped_reviews": grouped_reviews
+    })
+
+
+Use this exact logic for file sentiment analysis. Do not modify or replace this logic.
+
+✅ FULL PROJECT REQUIREMENTS
+
+Build a complete modern sentiment-analysis system with these features:
+
+✅ 1. Homepage (React + Tailwind)
+
+Include two major sections:
+
+A. File Upload Analysis (CSV / XLSX / PDF)
+
+Upload interface
+
+Send file to /analyze API (using the exact logic above)
+
+Display a Pie Chart using sentiment_percentages
+
+The Pie Chart must be clickable
+
+Clicking “Positive” → open new page /details/positive
+
+Display list of positive reviews
+
+Same for Negative and Neutral
+
+B. Live Sentiment Analysis (Text + Voice)
+
+Create a separate card with:
+
+Text input box
+
+Microphone button (SpeechRecognition API → convert to text)
+
+Analyze button
+
+Loader animation until result arrives
+
+Use Google Gemini API for live sentiment
+
+Gemini must return ONLY: positive, negative, neutral
+
+Gemini Prompt to Use:
+You are a sentiment classifier.
+Output one word only: positive, negative, or neutral.
+Analyze this text: {{USER_TEXT}}
+
+✅ 2. Backend Requirements (Python FastAPI or Flask)
+
+Backend must include:
+
+Routes:
+POST /analyze  (use the exact logic provided above)
+POST /live-text
+POST /live-audio
+GET /sentiment/<type>
+
+Live Text Sentiment Route
+
+Clean text minimally (lowercase)
+
+Send to Gemini API
+
+Return result as { sentiment: "positive" }
+
+Live Audio Route
+
+Accept audio blob from frontend
+
+Convert speech → text (e.g., SpeechRecognition / Whisper)
+
+Send text to Gemini
+
+Return sentiment
+
+Do not change the File Analysis Logic.
+✅ 3. Frontend Pages
+✅ / (Home Page)
+
+File upload
+
+Live text & voice analyzer
+
+✅ /results
+
+Pie chart + sentiment percentages
+
+✅ /details/:sentiment
+
+List of all reviews of a selected sentiment
+
+Use grouped_reviews from backend
+
+✅ 4. UI Requirements
+
+Modern interface
+
+Clean cards
+
+Responsive layout
+
+Loading animations
+
+Pie chart using Chart.js or Recharts
+
+✅ 5. Final Delivery Should Include
+
+Working backend
+
+Working frontend
+
+Fully integrated API
+
+Loader animations
+
+Voice to text
+
+PDF/CSV/XLSX upload
+
+Clickable pie chart navigation
+
+Environment file with GEMINI_API_KEY
+
+Instructions to run project
+
+✅ Build the entire application end-to-end based on the above specifications and EXACT sentiment logic.
